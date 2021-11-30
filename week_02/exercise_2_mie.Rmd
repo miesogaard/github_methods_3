@@ -56,16 +56,16 @@ The objectives of the exercises of this assignment are:
 politeness <- politeness %>%
     filter(!is.na(f0mn)) # Removing NA's
 
-politeness
+head(politeness)
 ```
 **The dataset consists of seven variables:** <br/>
-  subject : Contains the subject ID. <br/>
-  gender : *F* indicating that the subject is female and *M* indicating that the subject is male. <br/>
-  scenario : each scenario being a different sentence that the subject had to say. <br/>
-  attitude : Indicating whether the sentence was said in a “**pol**ite” or “**inf**ormal” context. <br/>
-  total_duration : The duration of utterances (seconds). <br/>
-  f0mn : The mean frequency of participants' voice pitch (higher values is higher pitch). <br/>
-  hiss_count : A count of noisy breath intakes. <br/>
+  __subject__ : Contains the subject ID. <br/>
+  __gender__ : *F* indicating that the subject is female and *M* indicating that the subject is male. <br/>
+  __scenario__ : each scenario being a different sentence that the subject had to say. <br/>
+  __attitude__ : Indicating whether the sentence was said in a “**pol**ite” or “**inf**ormal” context. <br/>
+  __total_duration__ : The duration of utterances (seconds). <br/>
+  __f0mn__ : The mean frequency of participants' voice pitch (higher values is higher pitch). <br/>
+  __hiss_count__ : A count of noisy breath intakes. <br/>
 
 One might strongly consider to encode _scenario_ as a factor. The _scenario_ is currently encoded as integer, but because of the fact that the different scenarios are independent categories, it should be encoded as a factor. If one keeps _scenario_ as integer, the model will treat the variable as a continuum, and that is not preferable here.
 In relation to the character variables, factors and character vectors are not treated differently when modelling the data. However, when doing model comparisons (ANOVA's), character variables are converted to factor variables, and it could therefore be considered to encode them as factors already from the beginning.
@@ -78,21 +78,17 @@ In relation to the character variables, factors and character vectors are not tr
 
 ```{r}
 
+# a dataframe for F1 only
 f1 <- politeness %>%
   filter(subject == "F1") %>%
-  mutate(scenario_factor = scenario)
+  mutate(scenario_factor = scenario) # Making a variable for the factorized scenario, so both the numeric and factor version are in the dataframe simultaneously.
 
 f1$scenario_factor <- as.factor(f1$scenario_factor)
-f1
+f1$scenario <- as.integer(f1$scenario)
 
 lm_i <- lm(f0mn ~ scenario, f1)
 
 lm_f <- lm(f0mn ~ scenario_factor, f1)
-
-
-summary(lm_i)
-summary(lm_f)
-
 
 ```
 
@@ -113,12 +109,12 @@ politeness$scenario <- as.factor(politeness$scenario)
 
 ```
 
-As we see, we get two different outputs for summary() and the matrices when _scenario_ is encoded differently. When _scenario_ is modelled as integer, the model treats ut as a continuum, i.e. that, for example, scenario 4 is four times scenario 1, which is not the case. When coded as a factor, _scenario_ is treated categorically - thus, the different scenarios independent from each other. Thus coded as integer, there is a high chance of losing relevant information.
+As we see, we get two different outputs for the matrices when _scenario_ is encoded as integer and factor, resprectively. When _scenario_ is modelled as integer, the model treats it as a continuum, i.e. that, for example, scenario 4 is four times scenario 1, which is not the case. When coded as a factor, _scenario_ is treated categorically - thus, the different scenarios independent from each other. Thus coded as integer, there is a high chance of losing relevant information.
 
 <br/>
 
 **ii. Which coding of _scenario_, as a factor or not, is more fitting?**
-The factorized version is more fitting. Because the numbers in scenario should not be treated as continuum (no floats), but should instead be treated as independent categories, which becomes the case when _scenario_ is factorized.
+The factorized version is more fitting. The numbers in scenario should not be treated as continuum (no floats), but should instead be treated as independent categories, which becomes the case when _scenario_ is factorized.
 
 <br/>
 
@@ -180,6 +176,9 @@ model_4 <- lme4::lmer(f0mn ~ gender + (1|subject) + (1|scenario), data = politen
 **v. which of the models has the lowest residual standard deviation, also compare the Akaike Information Criterion `AIC`?**
 
 ```{r}
+######### REWRITE THIS #######
+
+deviance(model_2) # LOOK INTO THIS
 
 c(summary(model_1)$sigma,
   summary(model_2)$sigma,
@@ -197,10 +196,12 @@ Model 4 (with two random intercepts) seems have to lowest residual standard devi
 ```{r}
 
 # Looking at explained variance of each random intercept.
-summary(model_4)
+summary(model_4)$var
 
-# Extra: Explained residual variance for the whole model (each with one random intercept for either scenario and subject)
+# Extra: Explained residual variance for the whole model (random intercept for scenario)
 sum(residuals(model_2)^2)
+
+# Extra: Explained residual variance for the whole model (random intercept for subject)
 sum(residuals(model_3)^2)
 
 ```
@@ -221,7 +222,7 @@ politeness_2 <- politeness %>%
   group_by(subject, gender) %>%
   summarise(f0mn_mean = mean(f0mn))
 
-politeness_2
+head(politeness_2)
 
 ```
 
@@ -233,8 +234,6 @@ politeness_2
 
 model_mean <- lm(f0mn_mean ~ gender, data = politeness_2)
 
-summary(model_mean)
-
 ```
 <br/>
 
@@ -242,7 +241,7 @@ summary(model_mean)
 
 <br/>
 
-**i). Which model's residuals ($\epsilon$) fulfil the assumptions of the General Linear Model better?)**
+**i). Which model's residuals ($\epsilon$) fulfil the assumptions of the General Linear Model better?**
 
 ```{r}
 
@@ -265,13 +264,14 @@ qqnorm(residuals(model_4))
 qqline(residuals(model_4))
 
 ```
+<br/>
 Overall, most points seem to fall on a straight line, however, some points are deviating, especially to the right, which indicates a positive skew. Some of these could possibly be evaluated as outliers.
 
 <br/>
 
 ### 3) Plotting the two-intercepts model
   
-**i. Create a plot for each subject, (similar to part 3 in Exercise 1), this time also indicating the fitted value for each of the subjects for each for the scenarios (hint use `fixef` to get the "grand effects" for each gender and `ranef` to get the subject- and scenario-specific effects)**
+**i. Create a plot for each subject, (similar to part 3 in Exercise 1), this time also indicating the fitted value for each of the subjects for each for the scenarios**
   
 ```{r}
 
@@ -302,7 +302,6 @@ ggplot(politeness, aes(x = scenario, y = f0mn, group = subject)) +
 ```{r}
 
 model_5 <- lme4::lmer(f0mn ~ gender + attitude + (1|subject) + (1|scenario), data = politeness)
-summary(model_5)
 
 ```
 <br/>
@@ -312,7 +311,6 @@ summary(model_5)
 ```{r}
 
 model_6 <- lme4::lmer(f0mn ~ gender*attitude + (1|subject) + (1|scenario), data = politeness)
-summary(model_6)
 
 ```
 <br/>
@@ -324,24 +322,23 @@ An interaction indicates whether there is some relationship between the two inde
 <br/>
 
 ### 2) Compare the three models
-#### *(1. gender as a main effect; 2. gender and attitude as main effects; 3. gender and attitude as main effects and the interaction between them. For all three models model unique intercepts for _subject_ and _scenario_) using residual variance, residual standard deviation and AIC.*
+#### *using residual variance, residual standard deviation and AIC.*
 
 ```{r}
-
 # Residual variance for the whole model (RSS)
-c(sum(residuals(model_4)^2),
-  sum(residuals(model_5)^2),
-  sum(residuals(model_6)^2)
-)
+
+res_1 <- sum(residuals(model_4)^2)
+res_2 <- sum(residuals(model_5)^2)
+res_3 <- sum(residuals(model_6)^2)
 
 # Residual Standard deviation
-c(sigma(model_4),
-  sigma(model_5),
-  sigma(model_6)
-)
+s_1 <- sigma(model_4)
+s_2 <- sigma(model_5)
+s_3 <- sigma(model_6)
 
-AIC(model_4, model_5, model_6)
+AICs <- AIC(model_4, model_5, model_6)
 
+tibble("Model"=c("Model 1","Model 2", "Model 3"), "Residual Variance"=c(res_1, res_2, res_3), "Sigma"=c(s_1, s_2, s_3), "AIC"=c(AICs[1,2], AICs[2,2], AICs[3,2]))
 ```
 <br/>
 
@@ -351,6 +348,11 @@ AIC(model_4, model_5, model_6)
 
 qqnorm(residuals(model_5))
 qqline(residuals(model_5))
+
+```
+```{r}
+
+plot(model_5)
 
 ```
 
