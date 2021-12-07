@@ -323,7 +323,7 @@ model_3.2.interaction <- lme4::glmer(count~pas*task + (1+pas|subject),
                                      family = poisson, 
                                      glmerControl(optimizer="bobyqa")) #Control added
 
-fixef(model_3.2.interaction)
+summary(model_3.2.interaction)$coefficients
 
 ```        
 
@@ -345,7 +345,7 @@ The algorithm seems to work, so nothing in our model is changed here.
 
 model_3.2 <- lme4::glmer(count ~ pas + task + (1+pas|subject), data = data.count, family = poisson, glmerControl(optimizer="bobyqa"))
 
-fixef(model_3.2) # looking at the fixed effects (we no longer have any interactions)
+summary(model_3.2)$coefficients # looking at the fixed effects (we no longer have any interactions)
 
 ```
 
@@ -387,10 +387,10 @@ est_val <- function(sub, model) {
   return(plot)
 }
 
-s1_plot <- estimated_vals(d_s1, model_3.2)
-s5_plot <- estimated_vals(d_s5, model_3.2)
-s12_plot <- estimated_vals(d_s12, model_3.2)
-s27_plot <- estimated_vals(d_s27, model_3.2)
+s1_plot <- est_val(d_s1, model_3.2)
+s5_plot <- est_val(d_s5, model_3.2)
+s12_plot <- est_val(d_s12, model_3.2)
+s27_plot <- est_val(d_s27, model_3.2)
 
 # arrange with ggplot
 ggpubr::ggarrange(s1_plot, s5_plot, s12_plot, s27_plot)
@@ -406,7 +406,8 @@ as dataset is not specified for Exercise 3, it is chosen to work with the data i
 ```{r}
 
 model_e3.1 <- lme4::glmer(correct ~ task + (1 | subject), data = df_e, family = "binomial")
-summary(model_e3.2)$coef
+
+summary(model_e3.1)$coefficients
 
 ```
 
@@ -419,7 +420,7 @@ Looking at the *p*-values in the output, it indicates that task does explain per
 ```{r}
 
 model_e3.2 <- lme4::glmer(correct ~ task + pas + (1 | subject), data = df_e, family = "binomial")
-summary(model_e3.2)
+summary(model_e3.2)$coefficients
 ```
 
 Here, _PAS_ has a significant effect on performance, where task no longer seems to have a significant effect on performance. Thus, adding _PAS_ to the model changes the effect that task has on the performance.
@@ -429,7 +430,7 @@ Here, _PAS_ has a significant effect on performance, where task no longer seems 
 ```{r}
 
 model_e3.3 <- lme4::glmer(correct ~ pas + (1 | subject), data = df_e, family = "binomial")
-summary(model_e3.4)$coef
+summary(model_e3.3)$coefficients
 
 ```
 
@@ -439,7 +440,7 @@ summary(model_e3.4)$coef
 ```{r}
 
 model_e3.4 <- lme4::glmer(correct ~ pas*task + (1 | subject), data = df_e, family = "binomial")
-summary(model_e3.4)$coef
+summary(model_e3.4)$coefficients
 
 ```
 
